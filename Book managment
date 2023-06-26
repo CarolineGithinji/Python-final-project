@@ -1,0 +1,191 @@
+import tkinter as tk
+from tkinter import messagebox
+import sqlite3
+
+# Create a database connection
+conn = sqlite3.connect("books.db")
+c = conn.cursor()
+
+# Create a table to store book records
+c.execute("""CREATE TABLE IF NOT EXISTS books (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                title TEXT,
+                author TEXT,
+                isbn TEXT,
+                publication_date TEXT
+            )""")
+conn.commit()
+
+# Create the main application window
+root = tk.Tk()
+root.title("Book Management")
+root.geometry("400x300")
+root.config(bg="lightgray")
+
+# Function to add a new book record
+def add_book():
+    title = entry_title.get()
+    author = entry_author.get()
+    isbn = entry_isbn.get()
+    publication_date = entry_publication_date.get()
+
+    # Check if any field is empty
+    if not title or not author or not isbn or not publication_date:
+        messagebox.showerror("Error", "Please enter all fields.")
+        return
+
+    # Insert the new book record into the database
+    c.execute("INSERT INTO books (title, author, isbn, publication_date) VALUES (?, ?, ?, ?)",
+              (title, author, isbn, publication_date))
+    conn.commit()
+    messagebox.showinfo("Success", "Book record added successfully.")
+
+    # Clear the entry fields
+    entry_title.delete(0, tk.END)
+    entry_author.delete(0, tk.END)
+    entry_isbn.delete(0, tk.END)
+    entry_publication_date.delete(0, tk.END)
+
+# Function to edit a book record
+def edit_book():
+    book_id = entry_book_id.get()
+    title = entry_title.get()
+    author = entry_author.get()
+    isbn = entry_isbn.get()
+    publication_date = entry_publication_date.get()
+
+    # Check if any field is empty
+    if not book_id or not title or not author or not isbn or not publication_date:
+        messagebox.showerror("Error", "Please enter all fields.")
+        return
+
+    # Update the book record in the database
+    c.execute("UPDATE books SET title=?, author=?, isbn=?, publication_date=? WHERE id=?",
+              (title, author, isbn, publication_date, book_id))
+    conn.commit()
+    if c.rowcount > 0:
+        messagebox.showinfo("Success", "Book record updated successfully.")
+    else:
+        messagebox.showerror("Error", "Invalid book ID.")
+
+    # Clear the entry fields
+    entry_book_id.delete(0, tk.END)
+    entry_title.delete(0, tk.END)
+    entry_author.delete(0, tk.END)
+    entry_isbn.delete(0, tk.END)
+    entry_publication_date.delete(0, tk.END)
+
+# Function to delete a book record
+def delete_book():
+    book_id = entry_book_id.get()
+
+    # Check if the book ID is empty
+    if not book_id:
+        messagebox.showerror("Error", "Please enter a book ID.")
+        return
+
+    # Delete the book record from the database
+    c.execute("DELETE FROM books WHERE id=?", (book_id,))
+    conn.commit()
+    if c.rowcount > 0:
+        messagebox.showinfo("Success", "Book record deleted successfully.")
+    else:
+        messagebox.showerror("Error", "Invalid book ID.")
+
+    # Clear the entry fields
+    entry_book_id.delete(0, tk.END)
+
+# Function to search for books
+def search_books():
+    search_title = entry_search_title.get()
+    search_author = entry_search_author.get()
+
+    # Construct the query based on the search criteria
+    query = "SELECT * FROM books"
+    if search_title:
+        query += f" WHERE title LIKE '%{search_title}%'"
+        if search_author:
+            query += f" AND author LIKE '%{search_author}%'"
+    elif search_author:
+        query += f" WHERE author LIKE '%{search_author}%'"
+
+    # Execute the query and fetch the results
+    c.execute(query)
+    books = c.fetchall()
+
+    # Display the search results in a message box
+    if books:
+        result = ""
+        for book in books:
+            result += f"ID: {book[0]}\nTitle: {book[1]}\nAuthor: {book[2]}\nISBN: {book[3]}\nPublication Date: {book[4]}\n\n"
+        messagebox.showinfo("Search Results", result)
+    else:
+        messagebox.showinfo("Search Results", "No books found.")
+
+    # Clear the entry fields
+    entry_search_title.delete(0, tk.END)
+    entry_search_author.delete(0, tk.END)
+
+# Book ID label and entry field
+label_book_id = tk.Label(root, text="Book ID:", bg="gray", fg="black", font=("Arial", 12))
+label_book_id.pack()
+entry_book_id = tk.Entry(root, bg="white", fg="black", font=("Arial", 12))
+entry_book_id.pack()
+
+# Title label and entry field
+label_title = tk.Label(root, text="Title:", bg="gray", fg="black", font=("Arial", 12))
+label_title.pack()
+entry_title = tk.Entry(root, bg="white", fg="black", font=("Arial", 12))
+entry_title.pack()
+
+# Author label and entry field
+label_author = tk.Label(root, text="Author:", bg="gray", fg="black", font=("Arial", 12))
+label_author.pack()
+entry_author = tk.Entry(root, bg="white", fg="black", font=("Arial", 12))
+entry_author.pack()
+
+# ISBN label and entry field
+label_isbn = tk.Label(root, text="ISBN:", bg="gray", fg="black", font=("Arial", 12))
+label_isbn.pack()
+entry_isbn = tk.Entry(root, bg="white", fg="black", font=("Arial", 12))
+entry_isbn.pack()
+
+# Publication Date label and entry field
+label_publication_date = tk.Label(root, text="Publication Date:", bg="gray", fg="black", font=("Arial", 12))
+label_publication_date.pack()
+entry_publication_date = tk.Entry(root, bg="white", fg="black", font=("Arial", 12))
+entry_publication_date.pack()
+
+# Add Book button
+btn_add_book = tk.Button(root, text="Add Book", command=add_book, bg="gray", fg="black", font=("Arial", 12))
+btn_add_book.pack()
+
+# Edit Book button
+btn_edit_book = tk.Button(root, text="Edit Book", command=edit_book, bg="gray", fg="black", font=("Arial", 12))
+btn_edit_book.pack()
+
+# Delete Book button
+btn_delete_book = tk.Button(root, text="Delete Book", command=delete_book, bg="gray", fg="black", font=("Arial", 12))
+btn_delete_book.pack()
+
+# Search Title label and entry field
+label_search_title = tk.Label(root, text="Search by Title:", bg="gray", fg="black", font=("Arial", 12))
+label_search_title.pack()
+entry_search_title = tk.Entry(root, bg="white", fg="black", font=("Arial", 12))
+entry_search_title.pack()
+
+# Search Author label and entry field
+label_search_author = tk.Label(root, text="Search by Author:", bg="gray", fg="black", font=("Arial", 12))
+label_search_author.pack()
+entry_search_author = tk.Entry(root, bg="white", fg="black", font=("Arial", 12))
+entry_search_author.pack()
+
+# Search Books button
+btn_search_books = tk.Button(root, text="Search Books", command=search_books, bg="gray", fg="black", font=("Arial", 12))
+btn_search_books.pack()
+
+# Run the Tkinter event loop
+root.mainloop()
+
+# Close the database connection when the application is closed
+conn.close()
